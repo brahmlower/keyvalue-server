@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"log"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -28,6 +29,7 @@ func (s *StorageService) GetKeys() []string {
 		keys[i] = k
 		i++
 	}
+	sort.Strings(keys)
 	return keys
 }
 
