@@ -10,7 +10,7 @@ import (
 	"github.com/martini-contrib/render"
 )
 
-func storageResponse(item storageservice.StorageItem, res http.ResponseWriter) {
+func storageResponse(item *storageservice.StorageItem, res http.ResponseWriter) {
 	res.Header().Add("Content-Type", item.ContentType)
 	res.Header().Add("ETag", fmt.Sprintf("%x", item.Sha1))
 	res.WriteHeader(200)
@@ -29,7 +29,7 @@ func readBody(req *http.Request) ([]byte, error) {
 		if err == io.EOF || bytes_read == 0 {
 			break
 		} else if err != nil {
-			return nil, fmt.Errorf("Failed to read request body")
+			return nil, fmt.Errorf("failed to read request body")
 		}
 	}
 	return body, nil
@@ -42,7 +42,13 @@ func ApiItemList(r render.Render, storage *storageservice.StorageService) {
 
 func ApiItemGet(params martini.Params, res http.ResponseWriter, storage *storageservice.StorageService) {
 	key_name := params["key_name"]
-	item := storage.GetKey(key_name)
+	item, err := storage.GetKey(key_name)
+	if err != nil {
+		res.Header().Add("Content-Type", "text/plain")
+		res.WriteHeader(404)
+		res.Write([]byte(err.Error()))
+		return
+	}
 	storageResponse(item, res)
 }
 
@@ -69,17 +75,22 @@ func ApiItemDelete(params martini.Params, res http.ResponseWriter, storage *stor
 	res.WriteHeader(204)
 }
 
-func main() {
-	// initialize the storage service
-	storage := storageservice.New()
-
-	// initialize the webserver
+func InitMartini() *martini.ClassicMartini {
 	m := martini.Classic()
 
 	m.Use(render.Renderer(render.Options{
 		Charset: "UTF-8",
 	}))
 
+	return m
+}
+
+func main() {
+	// initialize the storage service
+	storage := storageservice.New()
+
+	// initialize the webserver
+	m := InitMartini()
 	m.Map(storage)
 
 	m.Get("/keys", ApiItemList)

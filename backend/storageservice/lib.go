@@ -2,6 +2,7 @@ package storageservice
 
 import (
 	"crypto/sha1"
+	"fmt"
 	"log"
 	"os"
 	"sort"
@@ -33,12 +34,16 @@ func (s *StorageService) GetKeys() []string {
 	return keys
 }
 
-func (s *StorageService) GetKey(key_name string) StorageItem {
-	s.logger.Printf("Getting key: %#v\n", key_name)
-	return s.storage[key_name]
+func (s *StorageService) GetKey(keyName string) (*StorageItem, error) {
+	s.logger.Printf("Getting key: %#v\n", keyName)
+	if item, ok := s.storage[keyName]; ok {
+		return &item, nil
+	} else {
+		return nil, fmt.Errorf("item not found")
+	}
 }
 
-func (s *StorageService) SetKey(key_name string, key_value []byte, content_type string) StorageItem {
+func (s *StorageService) SetKey(key_name string, key_value []byte, content_type string) *StorageItem {
 	s.logger.Printf("Setting key: %#v\n", key_name)
 
 	item := StorageItem{
@@ -49,12 +54,21 @@ func (s *StorageService) SetKey(key_name string, key_value []byte, content_type 
 	}
 
 	s.storage[key_name] = item
-	return item
+	return &item
 }
 
 func (s *StorageService) DeleteKey(key_name string) {
 	s.logger.Printf("Deleting key: %#v\n", key_name)
 	delete(s.storage, key_name)
+}
+
+func NewItem(value []byte, contentType string) StorageItem {
+	return StorageItem{
+		ContentType: contentType,
+		LastUpdated: time.Now().UTC(),
+		Sha1:        sha1.Sum(value),
+		Data:        value,
+	}
 }
 
 func New() *StorageService {

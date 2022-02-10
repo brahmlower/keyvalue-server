@@ -2,4 +2,4 @@ build:
 	go build -o bin/main main.go
 
 run:
-	go run main.go
+	PORT=3001 go run main.go
